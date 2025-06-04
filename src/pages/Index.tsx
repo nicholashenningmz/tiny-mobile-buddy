@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Button } from "@/components/ui/button";
 import { HelpCircle, Volume2, VolumeX } from "lucide-react";
@@ -26,7 +25,7 @@ interface Finger {
   color: string;
 }
 
-type GamePhase = 'waiting' | 'selecting' | 'revealing' | 'resetting';
+type GamePhase = 'waiting' | 'hiding-losers' | 'expanding' | 'contracting' | 'fading' | 'revealing' | 'resetting';
 
 const Index = () => {
   const [fingers, setFingers] = useState<Finger[]>([]);
@@ -36,6 +35,7 @@ const Index = () => {
   const [showHelp, setShowHelp] = useState(false);
   const [screenColor, setScreenColor] = useState('#000000');
   const [showImpAnimation, setShowImpAnimation] = useState(false);
+  const [showOnlyWinner, setShowOnlyWinner] = useState(false);
   
   const countdownRef = useRef<NodeJS.Timeout | null>(null);
   const colorIndexRef = useRef(0);
@@ -84,36 +84,57 @@ const Index = () => {
     }, 2000);
   };
 
-  // Execute the evil selection
+  // Execute the new selection sequence
   const executeSelection = () => {
     if (fingers.length === 0) return;
     
-    setGamePhase('selecting');
     const selectedWinner = findWinner(fingers);
     setWinner(selectedWinner);
     
-    // Phase 1: Winner highlight (2 seconds)
-    setScreenColor(selectedWinner.color);
-    vibrate();
+    // Phase 1: Hide losing circles (0.5 seconds)
+    setGamePhase('hiding-losers');
+    setShowOnlyWinner(true);
     
     setTimeout(() => {
-      // Phase 2: Evil reveal (3 seconds)
-      setGamePhase('revealing');
-      setScreenColor('#1a1a1a');
-      setShowImpAnimation(true);
-      playEvilGiggle();
+      // Phase 2: Expand winner color to fill screen (0.5 seconds)
+      setGamePhase('expanding');
+      setScreenColor(selectedWinner.color);
       
       setTimeout(() => {
-        // Phase 3: Reset
-        setGamePhase('resetting');
-        setShowImpAnimation(false);
+        // Phase 3: Contract back to circle with vibration (0.5 seconds)
+        setGamePhase('contracting');
         setScreenColor('#000000');
-        setWinner(null);
-        setFingers([]);
-        colorIndexRef.current = 0;
-        setGamePhase('waiting');
-      }, 3000);
-    }, 2000);
+        vibrate();
+        
+        setTimeout(() => {
+          // Phase 4: Fade the winning circle (0.5 seconds)
+          setGamePhase('fading');
+          
+          setTimeout(() => {
+            // Phase 5: Wait 1 second, then show imp animation
+            setTimeout(() => {
+              setGamePhase('revealing');
+              setScreenColor('#1a1a1a');
+              setShowImpAnimation(true);
+              setShowOnlyWinner(false);
+              playEvilGiggle();
+              
+              setTimeout(() => {
+                // Phase 6: Reset everything
+                setGamePhase('resetting');
+                setShowImpAnimation(false);
+                setScreenColor('#000000');
+                setWinner(null);
+                setFingers([]);
+                setShowOnlyWinner(false);
+                colorIndexRef.current = 0;
+                setGamePhase('waiting');
+              }, 3000);
+            }, 1000);
+          }, 500);
+        }, 500);
+      }, 500);
+    }, 500);
   };
 
   // Handle touch events
@@ -207,15 +228,26 @@ const Index = () => {
         onTouchCancel={handleTouchEnd}
       >
         {/* Render finger circles */}
-        {fingers.map((finger) => (
-          <CircleComponent
-            key={finger.id}
-            x={finger.x}
-            y={finger.y}
-            color={finger.color}
-            isWinner={winner?.id === finger.id && gamePhase === 'selecting'}
-          />
-        ))}
+        {fingers.map((finger) => {
+          // Show all circles during waiting, or only winner during specific phases
+          const shouldShow = !showOnlyWinner || finger.id === winner?.id;
+          const isCurrentWinner = winner?.id === finger.id;
+          
+          // Hide during fading phase if it's the winner
+          if (gamePhase === 'fading' && isCurrentWinner) {
+            return null;
+          }
+          
+          return shouldShow ? (
+            <CircleComponent
+              key={finger.id}
+              x={finger.x}
+              y={finger.y}
+              color={finger.color}
+              isWinner={isCurrentWinner && (gamePhase === 'hiding-losers' || gamePhase === 'expanding' || gamePhase === 'contracting')}
+            />
+          ) : null;
+        })}
 
         {/* Evil imp animation */}
         {showImpAnimation && (

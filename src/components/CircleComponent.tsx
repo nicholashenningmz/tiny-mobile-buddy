@@ -42,7 +42,7 @@ export const CircleComponent: React.FC<CircleComponentProps> = ({
     return () => cancelAnimationFrame(animationId);
   }, [isWinner]);
 
-  const circleSize = 80; // Increased from 50 to 80 pixels for better visibility
+  const circleSize = 90; // Increased from 80 to 90 pixels for better visibility
 
   return (
     <div
