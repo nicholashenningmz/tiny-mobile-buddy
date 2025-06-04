@@ -1,8 +1,10 @@
+
 import { useAudio } from './useAudio';
+import { GamePhase } from './useGameState';
 
 export const useGameAnimation = (
   soundEnabled: boolean,
-  setGamePhase: (phase: string) => void,
+  setGamePhase: (phase: GamePhase) => void,
   setScreenColor: (color: string) => void,
   setShowImpAnimation: (show: boolean) => void,
   setShowOnlyWinner: (show: boolean) => void,
