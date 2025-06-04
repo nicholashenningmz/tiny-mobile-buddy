@@ -15,7 +15,6 @@ export const CircleComponent: React.FC<CircleComponentProps> = ({
   isWinner = false 
 }) => {
   const [scale, setScale] = useState(1);
-  const [animationPhase, setAnimationPhase] = useState(0);
 
   // Pulsating animation
   useEffect(() => {
@@ -43,7 +42,7 @@ export const CircleComponent: React.FC<CircleComponentProps> = ({
     return () => cancelAnimationFrame(animationId);
   }, [isWinner]);
 
-  const circleSize = 50; // Base size in pixels
+  const circleSize = 80; // Increased from 50 to 80 pixels for better visibility
 
   return (
     <div
