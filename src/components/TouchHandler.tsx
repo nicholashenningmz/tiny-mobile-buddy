@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { CircleComponent } from "@/components/CircleComponent";
 import { ImpAnimation } from "@/components/ImpAnimation";
 import { Finger } from "@/hooks/useGameState";
@@ -32,89 +32,106 @@ export const TouchHandler: React.FC<TouchHandlerProps> = ({
   countdownRef,
   startCountdown
 }) => {
-  const handleTouchStart = (event: React.TouchEvent) => {
-    event.preventDefault();
-    
-    // Block touches during animation sequence
-    if (isTouchBlocked(gamePhase)) return;
+  const touchAreaRef = useRef<HTMLDivElement>(null);
 
-    const touches = event.touches;
-    const newFingers: Finger[] = [];
+  useEffect(() => {
+    const touchArea = touchAreaRef.current;
+    if (!touchArea) return;
 
-    for (let i = 0; i < touches.length; i++) {
-      const touch = touches[i];
-      const rect = (event.target as HTMLElement).getBoundingClientRect();
+    const handleTouchStart = (event: TouchEvent) => {
+      event.preventDefault();
       
-      newFingers.push({
-        id: `finger-${touch.identifier}`,
-        x: touch.clientX - rect.left,
-        y: touch.clientY - rect.top,
-        color: COLORS[colorIndexRef.current % COLORS.length]
-      });
-      
-      colorIndexRef.current++;
-    }
+      // Block touches during animation sequence
+      if (isTouchBlocked(gamePhase)) return;
 
-    setFingers(newFingers);
-    startCountdown();
-  };
+      const touches = event.touches;
+      const newFingers: Finger[] = [];
+      const rect = touchArea.getBoundingClientRect();
 
-  const handleTouchMove = (event: React.TouchEvent) => {
-    event.preventDefault();
-    
-    // Block touches during animation sequence
-    if (isTouchBlocked(gamePhase)) return;
-
-    const touches = event.touches;
-    const updatedFingers: Finger[] = [];
-
-    for (let i = 0; i < touches.length; i++) {
-      const touch = touches[i];
-      const rect = (event.target as HTMLElement).getBoundingClientRect();
-      const existingFinger = fingers.find(f => f.id === `finger-${touch.identifier}`);
-      
-      if (existingFinger) {
-        updatedFingers.push({
-          ...existingFinger,
+      for (let i = 0; i < touches.length; i++) {
+        const touch = touches[i];
+        
+        newFingers.push({
+          id: `finger-${touch.identifier}`,
           x: touch.clientX - rect.left,
-          y: touch.clientY - rect.top
+          y: touch.clientY - rect.top,
+          color: COLORS[colorIndexRef.current % COLORS.length]
         });
+        
+        colorIndexRef.current++;
       }
-    }
 
-    setFingers(updatedFingers);
-  };
-
-  const handleTouchEnd = (event: React.TouchEvent) => {
-    event.preventDefault();
-    
-    // Block touches during animation sequence
-    if (isTouchBlocked(gamePhase)) return;
-
-    const touches = event.touches;
-    const remainingFingers = fingers.filter(finger => 
-      Array.from(touches).some(touch => finger.id === `finger-${touch.identifier}`)
-    );
-
-    setFingers(remainingFingers);
-    
-    if (remainingFingers.length > 0) {
+      setFingers(newFingers);
       startCountdown();
-    } else {
-      if (countdownRef.current) {
-        clearTimeout(countdownRef.current);
+    };
+
+    const handleTouchMove = (event: TouchEvent) => {
+      event.preventDefault();
+      
+      // Block touches during animation sequence
+      if (isTouchBlocked(gamePhase)) return;
+
+      const touches = event.touches;
+      const updatedFingers: Finger[] = [];
+      const rect = touchArea.getBoundingClientRect();
+
+      for (let i = 0; i < touches.length; i++) {
+        const touch = touches[i];
+        const existingFinger = fingers.find(f => f.id === `finger-${touch.identifier}`);
+        
+        if (existingFinger) {
+          updatedFingers.push({
+            ...existingFinger,
+            x: touch.clientX - rect.left,
+            y: touch.clientY - rect.top
+          });
+        }
       }
-    }
-  };
+
+      setFingers(updatedFingers);
+    };
+
+    const handleTouchEnd = (event: TouchEvent) => {
+      event.preventDefault();
+      
+      // Block touches during animation sequence
+      if (isTouchBlocked(gamePhase)) return;
+
+      const touches = event.touches;
+      const remainingFingers = fingers.filter(finger => 
+        Array.from(touches).some(touch => finger.id === `finger-${touch.identifier}`)
+      );
+
+      setFingers(remainingFingers);
+      
+      if (remainingFingers.length > 0) {
+        startCountdown();
+      } else {
+        if (countdownRef.current) {
+          clearTimeout(countdownRef.current);
+        }
+      }
+    };
+
+    // Add event listeners with passive: false to allow preventDefault
+    touchArea.addEventListener('touchstart', handleTouchStart, { passive: false });
+    touchArea.addEventListener('touchmove', handleTouchMove, { passive: false });
+    touchArea.addEventListener('touchend', handleTouchEnd, { passive: false });
+    touchArea.addEventListener('touchcancel', handleTouchEnd, { passive: false });
+
+    return () => {
+      touchArea.removeEventListener('touchstart', handleTouchStart);
+      touchArea.removeEventListener('touchmove', handleTouchMove);
+      touchArea.removeEventListener('touchend', handleTouchEnd);
+      touchArea.removeEventListener('touchcancel', handleTouchEnd);
+    };
+  }, [fingers, gamePhase, isTouchBlocked, setFingers, colorIndexRef, countdownRef, startCountdown]);
 
   return (
     <div
+      ref={touchAreaRef}
       className="w-full h-full relative transition-colors duration-500"
       style={{ backgroundColor: screenColor }}
-      onTouchStart={handleTouchStart}
-      onTouchMove={handleTouchMove}
-      onTouchEnd={handleTouchEnd}
-      onTouchCancel={handleTouchEnd}
     >
       {/* Render finger circles */}
       {fingers.map((finger) => {
