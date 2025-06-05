@@ -21,6 +21,8 @@ export const useGameLogic = () => {
   const findWinner = useCallback((activeFingers: Finger[]): Finger => {
     if (activeFingers.length === 0) return null!;
     
+    console.log('Finding winner from fingers:', activeFingers.map(f => ({ id: f.id, y: f.y, x: f.x, color: f.color })));
+    
     // Start with the first finger as temporary winner
     let winner = activeFingers[0];
     
@@ -28,16 +30,20 @@ export const useGameLogic = () => {
     for (let i = 1; i < activeFingers.length; i++) {
       const finger = activeFingers[i];
       
+      console.log(`Comparing finger ${finger.id} (y: ${finger.y}) with current winner ${winner.id} (y: ${winner.y})`);
+      
       if (finger.y > winner.y) {
         // This finger is closer to the bottom than our current winner
+        console.log(`New winner: ${finger.id} with y: ${finger.y}`);
         winner = finger;
       } else if (finger.y === winner.y && finger.x > winner.x) {
         // Tiebreaker: rightmost finger wins if they're at same height
+        console.log(`Tiebreaker winner: ${finger.id} with x: ${finger.x}`);
         winner = finger;
       }
     }
     
-    console.log('Winner selected:', winner);
+    console.log('Final winner selected:', { id: winner.id, y: winner.y, x: winner.x, color: winner.color });
     return winner;
   }, []);
 

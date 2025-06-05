@@ -1,4 +1,3 @@
-
 import { useAudio } from './useAudio';
 import { GamePhase } from './useGameState';
 
@@ -15,6 +14,8 @@ export const useGameAnimation = (
   // Execute the selection animation sequence
   const executeSelection = (winner: any) => {
     if (!winner) return;
+    
+    console.log('Starting animation with winner:', winner);
     
     // Phase 1: Hide losing circles (0.5 seconds)
     setGamePhase('hiding-losers');
@@ -38,13 +39,12 @@ export const useGameAnimation = (
             setGamePhase('fading');
             
             setTimeout(() => {
-              // Phase 6: Wait 1 second, then show imp animation
+              // Phase 6: Wait 1 second, then show imp animation (keep only winner visible)
               setTimeout(() => {
                 setGamePhase('revealing');
                 setScreenColor('#1a1a1a');
                 setShowImpAnimation(true);
-                setShowOnlyWinner(false);
-                playEvilGiggle();
+                // Keep showOnlyWinner true so only winner circle stays visible
                 
                 setTimeout(() => {
                   // Phase 7: Reset everything
@@ -52,7 +52,7 @@ export const useGameAnimation = (
                 }, 3000);
               }, 1000);
             }, 500);
-          }, 500); // Added delay to keep the circle visible longer
+          }, 500);
         }, 500);
       }, 500);
     }, 500);

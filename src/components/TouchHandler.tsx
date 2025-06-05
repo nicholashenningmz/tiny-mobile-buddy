@@ -118,6 +118,11 @@ export const TouchHandler: React.FC<TouchHandlerProps> = ({
     >
       {/* Render finger circles */}
       {fingers.map((finger) => {
+        // During revealing phase (imp animation), only show winner
+        if (gamePhase === 'revealing' && showOnlyWinner && finger.id !== winner?.id) {
+          return null;
+        }
+        
         // Show all circles during waiting, or only winner during specific phases
         const shouldShow = !showOnlyWinner || finger.id === winner?.id;
         const isCurrentWinner = winner?.id === finger.id;
@@ -133,7 +138,7 @@ export const TouchHandler: React.FC<TouchHandlerProps> = ({
             x={finger.x}
             y={finger.y}
             color={finger.color}
-            isWinner={isCurrentWinner && (gamePhase === 'hiding-losers' || gamePhase === 'expanding' || gamePhase === 'contracting')}
+            isWinner={isCurrentWinner && (gamePhase === 'hiding-losers' || gamePhase === 'expanding' || gamePhase === 'contracting' || gamePhase === 'revealing')}
           />
         ) : null;
       })}
